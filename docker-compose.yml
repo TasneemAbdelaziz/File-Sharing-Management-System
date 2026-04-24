@@ -91,6 +91,52 @@ services:
     networks:
       - nexus-network
 
+  mongo-download:
+    image: mongo:7
+    ports:
+      - "27021:27017"
+    networks:
+      - nexus-network
+
+  mongo-sharing:
+    image: mongo:7
+    ports:
+      - "27022:27017"
+    networks:
+      - nexus-network
+
+  download-orchestrator:
+    build: ./services/download-orchestrator
+    depends_on:
+      - kafka
+      - mongo-download
+    environment:
+      PORT: 3003
+      MONGO_URI: mongodb://mongo-download:27017/download_orchestrator_db
+      KAFKA_BROKERS: kafka:9092
+      DOWNLOADED_TOPIC: file.downloaded
+      DOWNLOAD_CONSUMER_GROUP: download-orchestrator-consumers
+    ports:
+      - "3003:3003"
+    networks:
+      - nexus-network
+
+  file-sharing:
+    build: ./services/file-sharing
+    depends_on:
+      - kafka
+      - mongo-sharing
+    environment:
+      PORT: 3004
+      MONGO_URI: mongodb://mongo-sharing:27017/file_sharing_db
+      KAFKA_BROKERS: kafka:9092
+      SHARED_TOPIC: file.shared
+      SHARE_CONSUMER_GROUP: file-sharing-consumers
+    ports:
+      - "3004:3004"
+    networks:
+      - nexus-network
+
 networks:
   nexus-network:
     driver: bridge
