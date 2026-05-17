@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: download-orchestrator-config
+  namespace: cse474-prod
+  labels:
+    app: download-orchestrator
+data:
+  port: "3001"
+  node-env: "production"
+  kafka-brokers: "kafka:9092"
+  log-level: "info"
+  service-name: "download-orchestrator"
+  jaeger-endpoint: "http://jaeger:14268/api/traces"
+  prometheus-port: "9090"

@@ -1,0 +1,146 @@
+# Default values for CSE474 File Sharing System
+
+# Global configuration
+global:
+  namespace: cse474-prod
+  environment: production
+
+# Download Orchestrator Service Configuration
+downloadOrchestrator:
+  enabled: true
+  name: download-orchestrator
+  replicaCount: 2
+  image:
+    repository: merna1001/download-orchestrator
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  port: 3001
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    NODE_ENV: production
+    LOG_LEVEL: info
+    KAFKA_BROKERS: kafka:9092
+  secrets:
+    mongoUri: mongodb://mongodb:27017/download-orchestrator
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+# File Sharing Service Configuration
+fileSharing:
+  enabled: true
+  name: file-sharing
+  replicaCount: 2
+  image:
+    repository: merna1001/file-sharing
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  port: 3002
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    NODE_ENV: production
+    LOG_LEVEL: info
+    KAFKA_BROKERS: kafka:9092
+  secrets:
+    mongoUri: mongodb://mongodb:27017/file-sharing
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 2
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+# Ingress Configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+  hosts:
+    - host: api.cse474.local
+      paths:
+        - path: /downloads
+          service: download-orchestrator
+        - path: /files
+          service: file-sharing
+    - host: downloads.cse474.local
+      paths:
+        - path: /
+          service: download-orchestrator
+    - host: files.cse474.local
+      paths:
+        - path: /
+          service: file-sharing
+  tls:
+    enabled: true
+    secretName: cse474-tls
+
+# Observability Configuration
+observability:
+  prometheus:
+    enabled: true
+    port: 9090
+    scrapeInterval: 30s
+  jaeger:
+    enabled: true
+    endpoint: http://jaeger:14268/api/traces
+  logging:
+    level: info
+    format: json
+
+# Pod Security Context
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+
+# Container Security Context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1000

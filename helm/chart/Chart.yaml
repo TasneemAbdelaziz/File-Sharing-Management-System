@@ -1,0 +1,9 @@
+apiVersion: v2
+name: cse474
+description: Helm chart for deploying the Nexus File Storage Platform microservices (including file-registry, upload-session, file-quota-service, and presigned-url-service)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+maintainers:
+  - name: Basant Awad
+    email: basant@cse474.local

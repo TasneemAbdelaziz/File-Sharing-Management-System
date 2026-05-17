@@ -1,0 +1,99 @@
+{
+  "name": "File Upload to Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "file-uploaded",
+        "options": {}
+      },
+      "id": "e492f15a-9b4e-4f3b-b27e-8c4377c8e239",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "test-webhook"
+    },
+    {
+      "parameters": {
+        "url": "http://file-registry:3007/files/{{ $json.body.file_id }}",
+        "options": {}
+      },
+      "id": "1b9a9d9a-4c27-4a64-b586-b48e028b12f6",
+      "name": "Get File Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "http://upload-session:3008/uploads/sessions/{{ $json.data.session_id }}",
+        "options": {}
+      },
+      "id": "3f4d6d6e-8d8a-493e-8c8f-a9b0c9d8e7f8",
+      "name": "Verify Upload Session",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "text": "=File {{ $node[\"Get File Details\"].json.data.filename }} was successfully uploaded! (Session: {{ $node[\"Verify Upload Session\"].json.data.id }})",
+        "chatId": "chat123"
+      },
+      "id": "a9c8f1e0-7d7c-4e5f-b3a1-9d8e7f6c5b4a",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get File Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File Details": {
+      "main": [
+        [
+          {
+            "node": "Verify Upload Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Upload Session": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

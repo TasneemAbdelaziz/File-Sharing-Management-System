@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: upload-session-deploy
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: upload-session
+spec:
+  replicas: {{ .Values.uploadSession.replicaCount }}
+  selector:
+    matchLabels:
+      app: upload-session
+  template:
+    metadata:
+      labels:
+        app: upload-session
+    spec:
+      containers:
+        - name: upload-session
+          image: "{{ .Values.uploadSession.image.repository }}:{{ .Values.uploadSession.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3008
+          resources:
+            {{- toYaml .Values.uploadSession.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3008
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3008
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: cse474-config

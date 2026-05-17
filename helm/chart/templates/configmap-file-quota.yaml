@@ -1,0 +1,18 @@
+{{- if .Values.fileQuota.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: file-quota-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: file-quota-service
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+data:
+  port: {{ .Values.fileQuota.port | quote }}
+  node-env: {{ .Values.fileQuota.env.nodeEnv | quote }}
+  db-host: {{ .Values.fileQuota.env.dbHost | quote }}
+  db-port: {{ .Values.fileQuota.env.dbPort | quote }}
+  db-name: {{ .Values.fileQuota.env.dbName | quote }}
+  kafka-broker: {{ .Values.fileQuota.env.kafkaBroker | quote }}
+  log-level: {{ .Values.fileQuota.env.logLevel | quote }}
+{{- end }}

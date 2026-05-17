@@ -1,0 +1,80 @@
+{{- if .Values.downloadOrchestrator.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.downloadOrchestrator.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.downloadOrchestrator.name }}
+    version: v1
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.downloadOrchestrator.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.downloadOrchestrator.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.downloadOrchestrator.name }}
+        version: v1
+    spec:
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.downloadOrchestrator.name }}
+        image: "{{ .Values.downloadOrchestrator.image.repository }}:{{ .Values.downloadOrchestrator.image.tag }}"
+        imagePullPolicy: {{ .Values.downloadOrchestrator.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.downloadOrchestrator.port }}
+          name: http
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "{{ .Values.downloadOrchestrator.port }}"
+        - name: NODE_ENV
+          value: "{{ .Values.downloadOrchestrator.env.NODE_ENV }}"
+        - name: KAFKA_BROKERS
+          value: "{{ .Values.downloadOrchestrator.env.KAFKA_BROKERS }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.downloadOrchestrator.env.LOG_LEVEL }}"
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.downloadOrchestrator.name }}-secrets
+              key: mongo-uri
+        {{- if .Values.observability.jaeger.enabled }}
+        - name: JAEGER_ENDPOINT
+          value: "{{ .Values.observability.jaeger.endpoint }}"
+        {{- end }}
+        resources:
+          {{- toYaml .Values.downloadOrchestrator.resources | nindent 12 }}
+        {{- if .Values.downloadOrchestrator.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: {{ .Values.downloadOrchestrator.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.downloadOrchestrator.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.downloadOrchestrator.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.downloadOrchestrator.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.downloadOrchestrator.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: {{ .Values.downloadOrchestrator.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.downloadOrchestrator.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.downloadOrchestrator.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.downloadOrchestrator.readinessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.securityContext }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- end }}
+      terminationGracePeriodSeconds: 30
+{{- end }}

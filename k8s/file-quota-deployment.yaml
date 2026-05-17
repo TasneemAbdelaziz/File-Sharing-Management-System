@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-quota-service
+  namespace: cse474-prod
+  labels:
+    app: file-quota-service
+    version: v1
+    owner: basant
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: file-quota-service
+  template:
+    metadata:
+      labels:
+        app: file-quota-service
+        version: v1
+    spec:
+      containers:
+      - name: file-quota-service
+        image: ghcr.io/basantawad/file-storage-platform/file-quota-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3001
+          name: http
+          protocol: TCP
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: port
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: node-env
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: db-port
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: db-name
+        - name: KAFKA_BROKER
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: kafka-broker
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: log-level
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: file-quota-secrets
+              key: db-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: file-quota-secrets
+              key: db-password
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 30

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: file-registry-config
+  namespace: file-platform
+data:
+  KAFKA_BROKERS: "kafka-service:9092"
+  KAFKA_CLIENT_ID: "file-registry"
+  CHUNK_CATALOG_URL: "http://chunk-catalog:80"
+  VERSIONING_URL: "http://versioning:80"
+  LOG_LEVEL: "info"

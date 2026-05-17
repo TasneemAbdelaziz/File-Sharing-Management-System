@@ -1,0 +1,92 @@
+{{- if .Values.fileQuota.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-quota-service
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: file-quota-service
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    owner: basant
+spec:
+  replicas: {{ .Values.fileQuota.replicaCount }}
+  selector:
+    matchLabels:
+      app: file-quota-service
+  template:
+    metadata:
+      labels:
+        app: file-quota-service
+    spec:
+      containers:
+      - name: file-quota-service
+        image: "{{ .Values.image.registry }}/file-quota-service:{{ .Values.fileQuota.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.fileQuota.port }}
+          name: http
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: port
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: node-env
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: db-port
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: db-name
+        - name: KAFKA_BROKER
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: kafka-broker
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: file-quota-config
+              key: log-level
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: file-quota-secrets
+              key: db-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: file-quota-secrets
+              key: db-password
+        resources:
+          {{- toYaml .Values.fileQuota.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 2
+{{- end }}

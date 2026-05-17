@@ -1,0 +1,34 @@
+{
+  "name": "file-quota-service",
+  "version": "1.0.0",
+  "description": "File Quota Service for Nexus",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "pm2-runtime start ecosystem.config.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest --coverage --coverageDirectory=tests/coverage --forceExit",
+    "test:unit": "jest tests/unit --coverage --coverageDirectory=tests/coverage/unit --forceExit",
+    "test:integration": "jest tests/integration --forceExit"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "knex": "^3.0.1",
+    "pg": "^8.11.3",
+    "kafkajs": "^2.2.4",
+    "pm2": "^5.3.0",
+    "dotenv": "^16.3.1",
+    "prom-client": "^15.1.0",
+    "swagger-ui-express": "^5.0.0",
+    "yamljs": "^0.3.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.test.js"]
+  }
+}

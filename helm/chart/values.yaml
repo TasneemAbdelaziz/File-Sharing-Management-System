@@ -1,0 +1,204 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Global Values (override with --set or -f custom-values.yaml)
+# ──────────────────────────────────────────────────────────────────────────────
+
+namespace: cse474-prod
+
+image:
+  registry: ghcr.io/basantawad/file-storage-platform
+  pullPolicy: IfNotPresent
+
+# ──────────────────────────────────────────────────────────────────────────────
+# File Registry Service (Nadira)
+# ──────────────────────────────────────────────────────────────────────────────
+fileRegistry:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/username/file-registry
+    tag: latest
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  env:
+    DB_HOST: "postgres"
+    DB_USER: "postgres"
+    KAFKA_BROKERS: "kafka:9092"
+    LOG_LEVEL: "info"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Upload Session Service (Nadira)
+# ──────────────────────────────────────────────────────────────────────────────
+uploadSession:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/username/upload-session
+    tag: latest
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  env:
+    DB_HOST: "postgres"
+    DB_USER: "postgres"
+    KAFKA_BROKERS: "kafka:9092"
+    LOG_LEVEL: "info"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# File Quota Service (Basant)
+# ──────────────────────────────────────────────────────────────────────────────
+fileQuota:
+  enabled: true
+  image:
+    tag: latest
+  replicaCount: 2
+  port: 3001
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    nodeEnv: production
+    dbHost: db-file-quota
+    dbPort: "5432"
+    dbName: quota_db
+    kafkaBroker: kafka:9092
+    logLevel: info
+  secrets:
+    dbUser: postgres
+    dbPassword: postgres
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Presigned URL Service (Basant)
+# ──────────────────────────────────────────────────────────────────────────────
+presignedUrl:
+  enabled: true
+  image:
+    tag: latest
+  replicaCount: 2
+  port: 3002
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    nodeEnv: production
+    dbHost: db-presigned-url
+    dbPort: "5432"
+    dbName: url_db
+    storageGatewayUrl: "http://storage-gateway:9000"
+    logLevel: info
+  secrets:
+    dbUser: postgres
+    dbPassword: postgres
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Download Orchestrator Service
+# ──────────────────────────────────────────────────────────────────────────────
+downloadOrchestrator:
+  enabled: true
+  image:
+    tag: latest
+  replicaCount: 2
+  port: 3003
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# ──────────────────────────────────────────────────────────────────────────────
+# File Sharing Service
+# ──────────────────────────────────────────────────────────────────────────────
+fileSharing:
+  enabled: true
+  image:
+    tag: latest
+  replicaCount: 2
+  port: 3004
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Ingress
+# ──────────────────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  tls: true
+  tlsSecret: cse474-tls
+  hosts:
+    - host: api.cse474.local
+      paths:
+        - path: /files
+          pathType: Prefix
+          service:
+            name: file-registry-svc
+            port: 3007
+        - path: /uploads
+          pathType: Prefix
+          service:
+            name: upload-session-svc
+            port: 3008
+        - path: /quota
+          pathType: Prefix
+          service:
+            name: file-quota-service
+            port: 80
+        - path: /urls
+          pathType: Prefix
+          service:
+            name: presigned-url-service
+            port: 80
+        - path: /downloads
+          pathType: Prefix
+          service:
+            name: download-orchestrator
+            port: 80
+    - host: downloads.cse474.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: download-orchestrator
+            port: 80
+    - host: files.cse474.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: file-sharing
+            port: 80
+    - host: quota.cse474.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: file-quota-service
+            port: 80
+    - host: urls.cse474.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: presigned-url-service
+            port: 80
