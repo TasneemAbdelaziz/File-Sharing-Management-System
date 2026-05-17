@@ -1,0 +1,174 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "File Quota Service API",
+    "version": "1.0.0",
+    "description": "Manages and enforces storage limits for users on the Nexus platform."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001"
+    }
+  ],
+  "paths": {
+    "/quota/{user_id}": {
+      "get": {
+        "summary": "Get quota for a user",
+        "tags": [
+          "Quota"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quota data returned successfully"
+          },
+          "404": {
+            "description": "Quota not found for user"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/quota/check": {
+      "post": {
+        "summary": "Check if a user has enough quota for a new file",
+        "tags": [
+          "Quota"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "new_file_size"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "example": "user-123"
+                  },
+                  "new_file_size": {
+                    "type": "integer",
+                    "example": 1048576,
+                    "description": "File size in bytes"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quota check passed"
+          },
+          "400": {
+            "description": "Bad request - missing fields"
+          },
+          "403": {
+            "description": "Quota exceeded"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/quota/update": {
+      "post": {
+        "summary": "Update used storage for a user",
+        "tags": [
+          "Quota"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "used_storage"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "example": "user-123"
+                  },
+                  "used_storage": {
+                    "type": "integer",
+                    "example": 2097152,
+                    "description": "New total used storage in bytes"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quota updated successfully"
+          },
+          "400": {
+            "description": "Bad request - missing fields"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Service is UP"
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness check",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Service is READY"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus metrics",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Prometheus formatted metrics"
+          }
+        }
+      }
+    }
+  }
+}

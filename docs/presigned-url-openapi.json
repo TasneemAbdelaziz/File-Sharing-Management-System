@@ -1,0 +1,156 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Presigned URL Service API",
+    "version": "1.0.0",
+    "description": "Generates secure, temporary, time-bound URLs for uploading or downloading files directly to/from the storage gateway."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3002"
+    }
+  ],
+  "paths": {
+    "/urls/upload": {
+      "post": {
+        "summary": "Generate a presigned URL for file upload",
+        "tags": [
+          "Presigned URLs"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file_id",
+                  "user_id"
+                ],
+                "properties": {
+                  "file_id": {
+                    "type": "string",
+                    "example": "file-abc-123"
+                  },
+                  "user_id": {
+                    "type": "string",
+                    "example": "user-456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload URL generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - missing file_id or user_id"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/urls/download": {
+      "post": {
+        "summary": "Generate a presigned URL for file download",
+        "tags": [
+          "Presigned URLs"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file_id",
+                  "user_id"
+                ],
+                "properties": {
+                  "file_id": {
+                    "type": "string",
+                    "example": "file-abc-123"
+                  },
+                  "user_id": {
+                    "type": "string",
+                    "example": "user-456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Download URL generated successfully"
+          },
+          "400": {
+            "description": "Bad request - missing file_id or user_id"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Service is UP"
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness check",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Service is READY"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus metrics",
+        "tags": [
+          "System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Prometheus formatted metrics"
+          }
+        }
+      }
+    }
+  }
+}

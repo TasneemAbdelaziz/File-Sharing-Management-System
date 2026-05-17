@@ -1,0 +1,20 @@
+{{- if .Values.fileSharing.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.fileSharing.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.fileSharing.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  type: {{ .Values.fileSharing.service.type }}
+  ports:
+  - port: {{ .Values.fileSharing.service.port }}
+    targetPort: {{ .Values.fileSharing.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.fileSharing.name }}
+{{- end }}

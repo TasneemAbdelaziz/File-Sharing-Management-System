@@ -1,7 +1,15 @@
+//Data Access Layer(Repository)
+//Its sole job is to interact with the quotas
+//table in your database.
+
 const { getDB } = require('../config/db');
 
 async function getQuotaByUserId(userId) {
   const db = getDB();
+
+  // It asks the "Quota Repository" to
+  //look into the database and find the specific quota record associated with a 
+  //given userId
   return db('quotas').where('user_id', userId).first();
 }
 

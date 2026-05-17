@@ -1,0 +1,18 @@
+{{- if .Values.presignedUrl.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: presigned-url-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: presigned-url-service
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+data:
+  port: {{ .Values.presignedUrl.port | quote }}
+  node-env: {{ .Values.presignedUrl.env.nodeEnv | quote }}
+  db-host: {{ .Values.presignedUrl.env.dbHost | quote }}
+  db-port: {{ .Values.presignedUrl.env.dbPort | quote }}
+  db-name: {{ .Values.presignedUrl.env.dbName | quote }}
+  storage-gateway-url: {{ .Values.presignedUrl.env.storageGatewayUrl | quote }}
+  log-level: {{ .Values.presignedUrl.env.logLevel | quote }}
+{{- end }}

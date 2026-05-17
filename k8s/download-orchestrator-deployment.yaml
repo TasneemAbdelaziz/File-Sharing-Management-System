@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: download-orchestrator
+  namespace: cse474-prod
+  labels:
+    app: download-orchestrator
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: download-orchestrator
+  template:
+    metadata:
+      labels:
+        app: download-orchestrator
+        version: v1
+    spec:
+      containers:
+      - name: download-orchestrator
+        image: ghcr.io/cse474/download-orchestrator:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3001
+          name: http
+          protocol: TCP
+        env:
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: download-orchestrator-config
+              key: port
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: download-orchestrator-config
+              key: node-env
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: download-orchestrator-secrets
+              key: mongo-uri
+        - name: KAFKA_BROKERS
+          valueFrom:
+            configMapKeyRef:
+              name: download-orchestrator-config
+              key: kafka-brokers
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: download-orchestrator-config
+              key: log-level
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
+      securityContext:
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 30

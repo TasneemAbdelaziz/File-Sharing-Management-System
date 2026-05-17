@@ -1,0 +1,17 @@
+{{- if .Values.downloadOrchestrator.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: download-orchestrator-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: download-orchestrator
+data:
+  port: {{ .Values.downloadOrchestrator.port | quote }}
+  node-env: "production"
+  kafka-brokers: "kafka:9092"
+  log-level: "info"
+  service-name: "download-orchestrator"
+  jaeger-endpoint: "http://jaeger:14268/api/traces"
+  prometheus-port: "9090"
+{{- end }}

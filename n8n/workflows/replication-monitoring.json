@@ -1,0 +1,174 @@
+{
+    "name": "Chunk Replication Monitoring Workflow",
+    "description": "Workflow that monitors file chunk replication and alerts on failures",
+    "active": true,
+    "nodes": [
+        {
+            "parameters": {
+                "triggerTimes": {
+                    "item": [
+                        {
+                            "mode": "everyMinutes",
+                            "minute": 5
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "Schedule Trigger",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                50,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://download-orchestrator:3001/downloads/status",
+                "method": "GET",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "status",
+                            "value": "replicating"
+                        }
+                    ]
+                }
+            },
+            "id": "http-get-replication",
+            "name": "Get Replication Status",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                250,
+                200
+            ],
+            "dependsOn": [
+                "schedule-trigger"
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "conditions": [
+                        {
+                            "value1": "={{ $node.\"Get Replication Status\".json.body.failedChunks.length }}",
+                            "condition": ">",
+                            "value2": 0
+                        }
+                    ]
+                }
+            },
+            "id": "condition-check",
+            "name": "Check for Failures",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                450,
+                200
+            ],
+            "dependsOn": [
+                "http-get-replication"
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://slack-webhook",
+                "method": "POST",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "text",
+                            "value": "Alert: {{ $node.\"Get Replication Status\".json.body.failedChunks.length }} chunks failed replication"
+                        }
+                    ]
+                }
+            },
+            "id": "slack-alert",
+            "name": "Send Slack Alert",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                650,
+                100
+            ],
+            "dependsOn": [
+                "condition-check"
+            ]
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "id": "response-node",
+            "name": "Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                850,
+                200
+            ],
+            "dependsOn": [
+                "slack-alert"
+            ]
+        }
+    ],
+    "connections": {
+        "Schedule Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Get Replication Status",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ]
+            ]
+        },
+        "Get Replication Status": {
+            "main": [
+                [
+                    {
+                        "node": "Check for Failures",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ]
+            ]
+        },
+        "Check for Failures": {
+            "main": [
+                [
+                    {
+                        "node": "Send Slack Alert",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Response",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ]
+            ]
+        },
+        "Send Slack Alert": {
+            "main": [
+                [
+                    {
+                        "node": "Response",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {},
+    "staticData": null
+}

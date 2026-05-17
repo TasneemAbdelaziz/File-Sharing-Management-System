@@ -1,7 +1,8 @@
 const { Kafka } = require('kafkajs');
 
 let producer;
-
+//Initializes the connection with Apache Kafka, setting up a producer
+//that will be used to send messages to the "quota.exceeded" topic
 async function connectKafka() {
   const kafka = new Kafka({
     clientId: 'file-quota-service',
@@ -16,7 +17,8 @@ async function connectKafka() {
     console.error('Error connecting to Kafka:', error);
   }
 }
-
+//Sends a message to the "quota.exceeded" topic when a user tries to
+//exceed their storage limit.
 async function publishQuotaExceeded(userId, currentUsed, maxStorage, newFileSize) {
   if (!producer) return;
   
@@ -42,4 +44,5 @@ async function publishQuotaExceeded(userId, currentUsed, maxStorage, newFileSize
   }
 }
 
+//Exporting the functions to be used in other parts of the application
 module.exports = { connectKafka, publishQuotaExceeded };

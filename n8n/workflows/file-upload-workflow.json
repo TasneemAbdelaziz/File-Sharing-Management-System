@@ -1,0 +1,169 @@
+{
+    "name": "File Upload to Download Plan Workflow",
+    "description": "Workflow that automates file upload, creates download plan, and sends notification",
+    "active": true,
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "upload",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                50,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://file-sharing:3002/files/upload",
+                "method": "POST",
+                "headers": {},
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "filename",
+                            "value": "={{ $node.\"Webhook Trigger\".json.body.filename }}"
+                        },
+                        {
+                            "name": "userId",
+                            "value": "={{ $node.\"Webhook Trigger\".json.body.userId }}"
+                        },
+                        {
+                            "name": "size",
+                            "value": "={{ $node.\"Webhook Trigger\".json.body.size }}"
+                        }
+                    ]
+                }
+            },
+            "id": "http-request-upload",
+            "name": "Upload File",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                250,
+                200
+            ],
+            "dependsOn": [
+                "webhook-trigger"
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://download-orchestrator:3001/downloads/{{ $node.\"Upload File\".json.body.data.fileId }}/plan",
+                "method": "GET",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "userId",
+                            "value": "={{ $node.\"Webhook Trigger\".json.body.userId }}"
+                        }
+                    ]
+                }
+            },
+            "id": "http-request-plan",
+            "name": "Generate Download Plan",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                450,
+                200
+            ],
+            "dependsOn": [
+                "http-request-upload"
+            ]
+        },
+        {
+            "parameters": {
+                "fromEmail": "noreply@cse474.local",
+                "toEmail": "={{ $node.\"Webhook Trigger\".json.body.notifyEmail }}",
+                "subject": "File Successfully Uploaded",
+                "text": "File '{{ $node.\"Upload File\".json.body.data.filename }}' has been uploaded and is ready for download. Plan ID: {{ $node.\"Generate Download Plan\".json.body.data.plan.id }}"
+            },
+            "id": "email-notification",
+            "name": "Send Notification Email",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 1,
+            "position": [
+                650,
+                200
+            ],
+            "dependsOn": [
+                "http-request-plan"
+            ]
+        },
+        {
+            "parameters": {
+                "options": {
+                    "responseData": "allEntries"
+                }
+            },
+            "id": "response-node",
+            "name": "Response",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                850,
+                200
+            ],
+            "dependsOn": [
+                "email-notification"
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Upload File",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ]
+            ]
+        },
+        "Upload File": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Download Plan",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Download Plan": {
+            "main": [
+                [
+                    {
+                        "node": "Send Notification Email",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ]
+            ]
+        },
+        "Send Notification Email": {
+            "main": [
+                [
+                    {
+                        "node": "Response",
+                        "branch": 0,
+                        "output": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {},
+    "staticData": null
+}

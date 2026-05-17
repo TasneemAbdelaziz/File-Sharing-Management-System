@@ -1,0 +1,80 @@
+{{- if .Values.fileSharing.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.fileSharing.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.fileSharing.name }}
+    version: v1
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.fileSharing.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.fileSharing.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.fileSharing.name }}
+        version: v1
+    spec:
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.fileSharing.name }}
+        image: "{{ .Values.fileSharing.image.repository }}:{{ .Values.fileSharing.image.tag }}"
+        imagePullPolicy: {{ .Values.fileSharing.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.fileSharing.port }}
+          name: http
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "{{ .Values.fileSharing.port }}"
+        - name: NODE_ENV
+          value: "{{ .Values.fileSharing.env.NODE_ENV }}"
+        - name: KAFKA_BROKERS
+          value: "{{ .Values.fileSharing.env.KAFKA_BROKERS }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.fileSharing.env.LOG_LEVEL }}"
+        - name: MONGO_URI
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.fileSharing.name }}-secrets
+              key: mongo-uri
+        {{- if .Values.observability.jaeger.enabled }}
+        - name: JAEGER_ENDPOINT
+          value: "{{ .Values.observability.jaeger.endpoint }}"
+        {{- end }}
+        resources:
+          {{- toYaml .Values.fileSharing.resources | nindent 12 }}
+        {{- if .Values.fileSharing.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: {{ .Values.fileSharing.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.fileSharing.livenessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.fileSharing.livenessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.fileSharing.livenessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.fileSharing.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: {{ .Values.fileSharing.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.fileSharing.readinessProbe.periodSeconds }}
+          timeoutSeconds: {{ .Values.fileSharing.readinessProbe.timeoutSeconds }}
+          failureThreshold: {{ .Values.fileSharing.readinessProbe.failureThreshold }}
+        {{- end }}
+        {{- if .Values.securityContext }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        {{- end }}
+      terminationGracePeriodSeconds: 30
+{{- end }}

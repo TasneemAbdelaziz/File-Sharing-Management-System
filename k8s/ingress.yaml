@@ -1,0 +1,95 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cse474-ingress
+  namespace: cse474-prod
+  labels:
+    app: cse474
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+spec:
+  tls:
+  - hosts:
+    - api.cse474.local
+    - downloads.cse474.local
+    - files.cse474.local
+    - quota.cse474.local
+    - urls.cse474.local
+    secretName: cse474-tls
+  rules:
+  - host: downloads.cse474.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: download-orchestrator
+            port:
+              number: 80
+  - host: files.cse474.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: file-sharing
+            port:
+              number: 80
+  # Basant - File Quota Service
+  - host: quota.cse474.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: file-quota-service
+            port:
+              number: 80
+  # Basant - Presigned URL Service
+  - host: urls.cse474.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: presigned-url-service
+            port:
+              number: 80
+  - host: api.cse474.local
+    http:
+      paths:
+      - path: /downloads
+        pathType: Prefix
+        backend:
+          service:
+            name: download-orchestrator
+            port:
+              number: 80
+      - path: /files
+        pathType: Prefix
+        backend:
+          service:
+            name: file-sharing
+            port:
+              number: 80
+      - path: /quota
+        pathType: Prefix
+        backend:
+          service:
+            name: file-quota-service
+            port:
+              number: 80
+      - path: /urls
+        pathType: Prefix
+        backend:
+          service:
+            name: presigned-url-service
+            port:
+              number: 80

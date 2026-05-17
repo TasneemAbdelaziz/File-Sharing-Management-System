@@ -1,0 +1,20 @@
+{{- if .Values.downloadOrchestrator.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.downloadOrchestrator.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.downloadOrchestrator.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
+spec:
+  type: {{ .Values.downloadOrchestrator.service.type }}
+  ports:
+  - port: {{ .Values.downloadOrchestrator.service.port }}
+    targetPort: {{ .Values.downloadOrchestrator.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.downloadOrchestrator.name }}
+{{- end }}

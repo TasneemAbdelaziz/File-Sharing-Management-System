@@ -2,7 +2,15 @@ const quotaRepo = require('../repositories/quota.repository');
 const { publishQuotaExceeded } = require('../config/kafka');
 
 async function getQuota(userId) {
+
+  //database query wrapped in a function call. It asks the "Quota Repository" to
+  //look into the database and find the specific quota record associated with a 
+  //given userId
   let quota = await quotaRepo.getQuotaByUserId(userId);
+
+  // If no quota is found for the user (maybe it's their first time), it creates a
+  // new quota record for them with a default storage limit of 5 Gigabytes 
+  //(5368709120 bytes)
   if (!quota) {
     quota = await quotaRepo.createQuota(userId, 5368709120); // 5GB default
   }

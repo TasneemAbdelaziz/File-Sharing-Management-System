@@ -1,0 +1,22 @@
+{{- if .Values.downloadOrchestrator.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: download-orchestrator
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: download-orchestrator
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: {{ .Values.downloadOrchestrator.port }}
+    protocol: TCP
+    name: http
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+    name: metrics
+  selector:
+    app: download-orchestrator
+{{- end }}

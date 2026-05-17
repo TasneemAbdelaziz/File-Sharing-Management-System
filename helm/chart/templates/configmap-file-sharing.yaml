@@ -1,0 +1,17 @@
+{{- if .Values.fileSharing.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: file-sharing-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: file-sharing
+data:
+  port: {{ .Values.fileSharing.port | quote }}
+  node-env: "production"
+  kafka-brokers: "kafka:9092"
+  log-level: "info"
+  service-name: "file-sharing"
+  jaeger-endpoint: "http://jaeger:14268/api/traces"
+  prometheus-port: "9091"
+{{- end }}

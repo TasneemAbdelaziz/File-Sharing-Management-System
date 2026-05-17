@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-registry-deploy
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: file-registry
+spec:
+  replicas: {{ .Values.fileRegistry.replicaCount }}
+  selector:
+    matchLabels:
+      app: file-registry
+  template:
+    metadata:
+      labels:
+        app: file-registry
+    spec:
+      containers:
+        - name: file-registry
+          image: "{{ .Values.fileRegistry.image.repository }}:{{ .Values.fileRegistry.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3007
+          resources:
+            {{- toYaml .Values.fileRegistry.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3007
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3007
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: cse474-config

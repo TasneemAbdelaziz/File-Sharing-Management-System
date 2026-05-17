@@ -1,0 +1,17 @@
+{{- if .Values.presignedUrl.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: presigned-url-service
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: presigned-url-service
+spec:
+  type: ClusterIP
+  selector:
+    app: presigned-url-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: {{ .Values.presignedUrl.port }}
+{{- end }}

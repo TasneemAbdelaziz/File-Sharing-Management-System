@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: upload-session-config
+  namespace: file-platform
+data:
+  KAFKA_BROKERS: "kafka-service:9092"
+  KAFKA_CLIENT_ID: "upload-session"
+  FILE_REGISTRY_URL: "http://file-registry:80"
+  CHUNK_CATALOG_URL: "http://chunk-catalog:80"
+  SESSION_TTL_MINUTES: "60"
+  LOG_LEVEL: "info"

@@ -1,3 +1,4 @@
+// Database Connection Configuration
 const knex = require('knex');
 
 let dbInstance;

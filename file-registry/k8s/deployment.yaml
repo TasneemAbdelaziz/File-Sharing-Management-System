@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-registry
+  namespace: file-platform
+  labels:
+    app: file-registry
+    version: "1.0.0"
+    domain: file
+spec:
+  replicas: 2                          # Required: HA with 2 replicas
+  selector:
+    matchLabels:
+      app: file-registry
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0               # Zero-downtime deploys
+  template:
+    metadata:
+      labels:
+        app: file-registry
+        version: "1.0.0"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: file-registry
+          image: ghcr.io/your-org/file-registry:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3007
+              name: http
+          env:
+            - name: PORT
+              value: "3007"
+            - name: NODE_ENV
+              value: "production"
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: file-registry-secret
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: file-registry-secret
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: file-registry-secret
+                  key: DB_NAME
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: file-registry-secret
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: file-registry-secret
+                  key: DB_PASSWORD
+            - name: KAFKA_BROKERS
+              valueFrom:
+                configMapKeyRef:
+                  name: file-registry-config
+                  key: KAFKA_BROKERS
+            - name: KAFKA_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: file-registry-config
+                  key: KAFKA_CLIENT_ID
+            - name: CHUNK_CATALOG_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: file-registry-config
+                  key: CHUNK_CATALOG_URL
+            - name: VERSIONING_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: file-registry-config
+                  key: VERSIONING_URL
+          # ── Liveness: restart if app is deadlocked
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3007
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          # ── Readiness: block traffic until DB is connected
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3007
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      restartPolicy: Always

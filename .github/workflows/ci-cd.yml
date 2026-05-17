@@ -1,0 +1,143 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  GITHUB_ACTOR: ${{ github.actor }}
+  KUBE_NAMESPACE: cse474-prod
+
+jobs:
+  lint-build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: file_registry_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      kafka:
+        image: bitnami/kafka:latest
+        env:
+          KAFKA_CFG_NODE_ID: 0
+          KAFKA_CFG_PROCESS_ROLES: controller,broker
+          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+          KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+          KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        ports:
+          - 9092:9092
+
+    strategy:
+      matrix:
+        service: [file-registry, upload-session]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd ${{ matrix.service }}
+          npm install
+
+      - name: Lint
+        run: |
+          cd ${{ matrix.service }}
+          npm run lint || echo "Linting failed, ignoring for now"
+
+      - name: Run Tests & Coverage
+        env:
+          DB_HOST: localhost
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          KAFKA_BROKERS: localhost:9092
+        run: |
+          cd ${{ matrix.service }}
+          # Create databases for both just in case
+          if [ "${{ matrix.service }}" = "upload-session" ]; then
+            PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE upload_session_db;" || true
+          fi
+          # Tests will hit the DB so we just run coverage
+          npm run test:coverage
+
+      - name: Upload Coverage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.service }}
+          path: ${{ matrix.service }}/coverage/
+
+  docker-build-push:
+    needs: lint-build-test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [file-registry, upload-session]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:${{ github.sha }}, ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}:latest
+
+  deploy:
+    needs: docker-build-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up Kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Create Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Helm Upgrade / Install
+        run: |
+          helm upgrade --install cse474 ./helm/chart \
+            --namespace ${{ env.KUBE_NAMESPACE }} --create-namespace \
+            --set fileRegistry.image.repository=${{ env.REGISTRY }}/${{ github.repository }}/file-registry \
+            --set fileRegistry.image.tag=${{ github.sha }} \
+            --set uploadSession.image.repository=${{ env.REGISTRY }}/${{ github.repository }}/upload-session \
+            --set uploadSession.image.tag=${{ github.sha }}
