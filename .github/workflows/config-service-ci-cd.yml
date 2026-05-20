@@ -9,17 +9,25 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: config-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - run: npm install
-      - run: npx eslint src/
+      - name: Install dependencies
+        run: npm install
+      - name: Lint source code
+        run: npx eslint src/ --no-eslintrc --env node,es2021 --parser-options=ecmaVersion:2021
 
   test:
     needs: lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: config-service
     services:
       postgres:
         image: postgres:15
@@ -42,33 +50,45 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - run: npm install
-      - run: npm test
-      - run: npm run test:coverage
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm test
+      - name: Run coverage
+        run: npm run test:coverage
       - uses: actions/upload-artifact@v3
         with:
           name: coverage-report
-          path: tests/coverage
+          path: config-service/tests/coverage
 
   docker-build-push:
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Team3'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: config-service
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
-      - run: docker build -t ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }} .
-      - run: docker push ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }}
-      - run: docker tag ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }} ghcr.io/${{ github.repository_owner }}/config-service:latest
-      - run: docker push ghcr.io/${{ github.repository_owner }}/config-service:latest
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+      - name: Build and push image
+        run: |
+          docker build -t ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }} .
+          docker push ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }}
+          docker tag ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }} ghcr.io/${{ github.repository_owner }}/config-service:latest
+          docker push ghcr.io/${{ github.repository_owner }}/config-service:latest
 
   deploy:
     needs: docker-build-push
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: config-service
     steps:
       - uses: actions/checkout@v4
       - name: Configure kubectl
