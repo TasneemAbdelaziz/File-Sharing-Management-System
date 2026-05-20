@@ -1,0 +1,4 @@
+apiVersion: v2
+name: feature-flag-service
+description: Feature Flag Service Helm Chart
+version: 1.0.0

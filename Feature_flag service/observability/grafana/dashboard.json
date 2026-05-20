@@ -1,0 +1,61 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Request Rate",
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "{{method}} {{route}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Error Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status_code!~\"2..\"}[1m])) / sum(rate(http_requests_total[1m])) * 100",
+          "legendFormat": "error rate"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "P95 Latency",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, method, route))",
+          "legendFormat": "{{method}} {{route}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Kafka Messages Published",
+      "targets": [
+        {
+          "expr": "kafka_messages_published_total",
+          "legendFormat": "published"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Total Active Feature Flags",
+      "targets": [
+        {
+          "expr": "feature_flags_total",
+          "legendFormat": "total"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 36,
+  "title": "Feature Flag Service Dashboard",
+  "uid": "feature-flag-service-dashboard",
+  "version": 1
+}

@@ -1,0 +1,86 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npx eslint src/
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: config_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+      kafka:
+        image: bitnami/kafka:latest
+        env:
+          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+          KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+        ports:
+          - 9092:9092
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: tests/coverage
+
+  docker-build-push:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+      - run: docker build -t ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }} .
+      - run: docker push ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }}
+      - run: docker tag ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }} ghcr.io/${{ github.repository_owner }}/config-service:latest
+      - run: docker push ghcr.io/${{ github.repository_owner }}/config-service:latest
+
+  deploy:
+    needs: docker-build-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/
+          kubectl set image deployment/config-service config-service=ghcr.io/${{ github.repository_owner }}/config-service:${{ github.sha }} -n cse474-prod
+          kubectl rollout status deployment/config-service -n cse474-prod
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          kubectl rollout undo deployment/config-service -n cse474-prod

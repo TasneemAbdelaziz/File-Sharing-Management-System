@@ -1,0 +1,24 @@
+image:
+  repository: ghcr.io/<YOUR_GITHUB_USERNAME>/config-service
+  tag: latest
+replicaCount: 2
+service:
+  port: 3031
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "250m"
+    memory: "256Mi"
+env:
+  PORT: "3031"
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_NAME: config_db
+  KAFKA_BROKER: kafka:9092
+  KAFKA_CLIENT_ID: config-service
+  KAFKA_TOPIC: config.updated
+secrets:
+  DB_USER: postgres
+  DB_PASSWORD: postgres

@@ -1,0 +1,107 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Config Service API",
+    "version": "1.0.0",
+    "description": "Manages runtime configuration for all microservices"
+  },
+  "paths": {
+    "/config/{service}": {
+      "put": {
+        "summary": "Update config value",
+        "parameters": [
+          {
+            "name": "service",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["key", "value"],
+                "properties": {
+                  "key": { "type": "string" },
+                  "value": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Config updated successfully" },
+          "400": { "description": "Validation error" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "get": {
+        "summary": "Get all config values for a service",
+        "parameters": [
+          {
+            "name": "service",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "List of config values" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/config/{service}/{key}": {
+      "get": {
+        "summary": "Get a single config value",
+        "parameters": [
+          {
+            "name": "service",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Config value returned" },
+          "404": { "description": "Not found" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": { "description": "Service is healthy" }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness check",
+        "responses": {
+          "200": { "description": "Service is ready" },
+          "503": { "description": "Service is not ready" }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus metrics endpoint",
+        "responses": {
+          "200": { "description": "Prometheus metrics" }
+        }
+      }
+    }
+  }
+}

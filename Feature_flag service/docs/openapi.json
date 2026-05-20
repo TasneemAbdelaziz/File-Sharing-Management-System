@@ -1,0 +1,122 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Feature Flag Service API",
+    "version": "1.0.0",
+    "description": "Manages feature flags for all microservices"
+  },
+  "servers": [
+    { "url": "http://localhost:3032" }
+  ],
+  "paths": {
+    "/flags": {
+      "post": {
+        "summary": "Create a new feature flag",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["service", "name", "enabled"],
+                "properties": {
+                  "service": { "type": "string" },
+                  "name": { "type": "string" },
+                  "enabled": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Feature flag created" },
+          "400": { "description": "Validation error" },
+          "409": { "description": "Duplicate feature flag" }
+        }
+      }
+    },
+    "/flags/{service}/{name}": {
+      "put": {
+        "summary": "Update or toggle an existing feature flag",
+        "parameters": [
+          { "name": "service", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "enabled": { "type": "boolean" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Feature flag updated" },
+          "400": { "description": "Validation error" },
+          "404": { "description": "Feature flag not found" }
+        }
+      },
+      "get": {
+        "summary": "Get a single feature flag",
+        "parameters": [
+          { "name": "service", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Feature flag returned" },
+          "404": { "description": "Feature flag not found" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a feature flag",
+        "parameters": [
+          { "name": "service", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "name", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Feature flag deleted" },
+          "404": { "description": "Feature flag not found" }
+        }
+      }
+    },
+    "/flags/{service}": {
+      "get": {
+        "summary": "Get all flags for a service",
+        "parameters": [
+          { "name": "service", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "List of feature flags" }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": { "description": "Service is healthy" }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness check",
+        "responses": {
+          "200": { "description": "Service is ready" },
+          "503": { "description": "Service is not ready" }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus metrics endpoint",
+        "responses": {
+          "200": { "description": "Prometheus metrics in text format" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "config-service.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  PORT: "{{ .Values.env.PORT }}"
+  DB_HOST: "{{ .Values.env.DB_HOST }}"
+  DB_PORT: "{{ .Values.env.DB_PORT }}"
+  DB_NAME: "{{ .Values.env.DB_NAME }}"
+  KAFKA_BROKER: "{{ .Values.env.KAFKA_BROKER }}"
+  KAFKA_CLIENT_ID: "{{ .Values.env.KAFKA_CLIENT_ID }}"
+  KAFKA_TOPIC: "{{ .Values.env.KAFKA_TOPIC }}"

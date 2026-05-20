@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feature-flag-service
+  namespace: cse474-prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: feature-flag-service
+  template:
+    metadata:
+      labels:
+        app: feature-flag-service
+    spec:
+      containers:
+        - name: feature-flag-service
+          image: ghcr.io/<YOUR_GITHUB_USERNAME>/feature-flag-service:latest
+          ports:
+            - containerPort: 3032
+          envFrom:
+            - configMapRef:
+                name: feature-flag-service-config
+            - secretRef:
+                name: feature-flag-service-secret
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3032
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3032
+            initialDelaySeconds: 10
+            periodSeconds: 10

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: config-service
+description: Config Service Helm Chart
+version: 1.0.0

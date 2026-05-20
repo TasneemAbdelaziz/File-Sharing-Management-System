@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feature-flag-service-config
+  namespace: cse474-prod
+data:
+  PORT: "3032"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "flags_db"
+  KAFKA_BROKER: "kafka:9092"
+  KAFKA_CLIENT_ID: "feature-flag-service"
+  KAFKA_TOPIC: "flag.updated"

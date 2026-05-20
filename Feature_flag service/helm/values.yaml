@@ -1,0 +1,24 @@
+image:
+  repository: ghcr.io/<YOUR_GITHUB_USERNAME>/feature-flag-service
+  tag: latest
+replicaCount: 2
+service:
+  port: 3032
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "250m"
+    memory: "256Mi"
+env:
+  PORT: "3032"
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_NAME: flags_db
+  KAFKA_BROKER: kafka:9092
+  KAFKA_CLIENT_ID: feature-flag-service
+  KAFKA_TOPIC: flag.updated
+secrets:
+  DB_USER: postgres
+  DB_PASSWORD: postgres

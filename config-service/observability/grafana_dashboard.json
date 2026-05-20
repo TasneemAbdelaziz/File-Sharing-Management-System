@@ -1,0 +1,50 @@
+{
+  "id": null,
+  "title": "Config Service Observability",
+  "tags": ["config-service", "observability"],
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Request Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (route)",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Error Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status_code=~\"5..\"}[1m])) by (route) / sum(rate(http_requests_total[1m])) by (route) * 100",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "P95 Latency",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route))",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "Kafka Messages Published",
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_messages_published_total[1m])) by (topic)",
+          "legendFormat": "{{topic}}"
+        }
+      ]
+    }
+  ]
+}
