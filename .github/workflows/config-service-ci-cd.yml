@@ -10,13 +10,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     defaults:
-      run:
-        working-directory: config-service
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+      kafka:
+        image: vectorized/redpanda:latest
+        ports:
+          - 9092:9092
       - name: Install dependencies
         run: npm install
       - name: Lint source code
@@ -29,18 +26,10 @@ jobs:
       run:
         working-directory: config-service
     services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: config_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
       kafka:
-        image: confluentinc/cp-kafka:7.4.0
-        env:
+        image: vectorized/redpanda:latest
+        ports:
+          - 9092:9092
           KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
           KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
         ports:

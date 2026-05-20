@@ -44,15 +44,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       kafka:
-        image: confluentinc/cp-kafka:7.4.0
-        env:
-          ALLOW_PLAINTEXT_LISTENER: 'yes'
-          KAFKA_CFG_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-          KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-          KAFKA_CFG_PROCESS_ROLES: broker,controller
-          KAFKA_CFG_NODE_ID: '1'
-          KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-          KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: '1@localhost:9093'
+        image: vectorized/redpanda:latest
         ports:
           - 9092:9092
     steps:
