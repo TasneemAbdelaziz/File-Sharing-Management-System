@@ -44,7 +44,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
       kafka:
-        image: vectorized/redpanda:latest
+        image: confluentinc/cp-kafka:7.4.0
         ports:
           - 9092:9092
     steps:
@@ -53,6 +53,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+      - name: Wait for Kafka
+        run: |
+          echo "Waiting for Kafka on localhost:9092..."
+          for i in $(seq 1 30); do
+            if timeout 1 bash -c "</dev/tcp/localhost/9092" >/dev/null 2>&1; then
+              echo "Kafka is up"
+              break
+            fi
+            echo "Waiting for Kafka... ($i/30)"
+            sleep 5
+          done
       - name: Install dependencies
         run: npm install
       - name: Run tests
