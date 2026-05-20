@@ -39,7 +39,7 @@ jobs:
           - 5432:5432
         options: --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
       kafka:
-        image: bitnami/kafka:latest
+        image: bitnami/kafka:3.5.1
         env:
           KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
           KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
